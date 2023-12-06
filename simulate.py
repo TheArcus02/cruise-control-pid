@@ -2,6 +2,13 @@ import numpy as np
 from scipy.integrate import odeint
 from vehicle import vehicle
 
+initial_setpoints = {
+    50: 0,
+    100: 15,
+    150: 20,
+    200: 10
+}
+
 
 def keep_limit(u: int) -> int:
     if u >= 100.0:
@@ -11,10 +18,14 @@ def keep_limit(u: int) -> int:
     return u
 
 
-def simulate(tf=300.0, load=200.0, v0=0, ubias=0):
+def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None):
+
     # Ustawienia symulacji
+    if set_points is None:
+        set_points = initial_setpoints
     if tf <= 0:
         tf = 1
+
     nsteps = 301  # ilość kroków czasowych
     delta_t = tf / (nsteps - 1)  # długość poszczególnego kroku czasowego
     ts = np.linspace(0, tf, nsteps)  # wektor czasu z równymi odstępami (time space)
@@ -48,14 +59,8 @@ def simulate(tf=300.0, load=200.0, v0=0, ubias=0):
 
     for i in range(nsteps - 1):
         # Zmiana prędkości docelowej
-        if i == 50:
-            sp = 0
-        if i == 100:
-            sp = 15
-        if i == 150:
-            sp = 20
-        if i == 200:
-            sp = 10
+        if i in set_points.keys():
+            sp = set_points[i]
 
         sp_res[i + 1] = sp
         error = sp - v0
