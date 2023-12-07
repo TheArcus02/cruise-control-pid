@@ -12,22 +12,22 @@ app.layout = html.Div([
         html.Div([
             html.Div([
                 html.H4(children=['Time [s]']),
-                dcc.Input(id="time", type="number", placeholder="300.0", value=300.0),
+                dcc.Input(id="time", type="number", placeholder="300.0", value=300.0, min=1),
             ]),
 
             html.Div([
                 html.H4(children=['Load [kg]']),
-                dcc.Input(id="load", type="number", placeholder="200.0", value=200.0),
+                dcc.Input(id="load", type="number", placeholder="200.0", value=200.0, min=0),
             ]),
 
             html.Div([
                 html.H4(children=['Initial Speed [m/s]']),
-                dcc.Input(id="v0", type="number", placeholder="0", value=0),
+                dcc.Input(id="v0", type="number", placeholder="0", value=0, min=0),
             ]),
 
             html.Div([
                 html.H4(children=['Initial pedal position [%]']),
-                dcc.Input(id="ubias", type="number", placeholder="0", value=0),
+                dcc.Input(id="ubias", type="number", placeholder="0", value=0, min=-50, max=100),
             ]),
         ], style={
             'display': 'grid',
@@ -65,14 +65,16 @@ app.layout = html.Div([
 
 
 @app.callback(
-    Output("set-point-container", "children"), Input("add-set-point", "n_clicks")
+    Output("set-point-container", "children"),
+    Input("add-set-point", "n_clicks"),
+    Input("time", 'value'),
 )
-def display_set_points(n_clicks):
+def display_set_points(n_clicks, time):
     patched_children = Patch()
     container = html.Div([
         html.Div([
             html.H4(children=['Point in Time [s]']),
-            dcc.Input(type="number", placeholder="0", value=0,
+            dcc.Input(type="number", placeholder="0", value=0, max=time,
                       id={"type": "set-point-time", "index": n_clicks}),
         ]),
         html.Div([
@@ -93,19 +95,21 @@ def display_set_points(n_clicks):
     return patched_children
 
 @app.callback(
-    Output("angle-container", "children"), Input("add-angle", "n_clicks")
+    Output("angle-container", "children"),
+    Input("add-angle", "n_clicks"),
+    Input("time", 'value'),
 )
-def display_angles(n_clicks):
+def display_angles(n_clicks, time):
     patched_children = Patch()
     container = html.Div([
         html.Div([
             html.H4(children=['Point in Time [s]']),
-            dcc.Input(type="number", placeholder="0", value=0,
+            dcc.Input(type="number", placeholder="0", value=0, max=time,
                       id={"type": "angle-time", "index": n_clicks}),
         ]),
         html.Div([
             html.H4(children=['Angle°']),
-            dcc.Input(type="number", placeholder="0", value=0,
+            dcc.Input(type="number", placeholder="0", value=0, min=-30, max=30,
                       id={"type": "angle-value", "index": n_clicks}),
         ]),
     ], style={
@@ -149,7 +153,7 @@ def display_graph(time, load, v0, ubias, set_point_times, set_point_values, angl
     ts, step, v_res, error_res, int_res, sp_res, angles_res = simulate(time, load, v0, ubias, set_points, angles)
 
     fig = make_subplots(rows=2, cols=2,
-                        subplot_titles=['Velocity and Set Point', 'Gas Pedal vs Time', 'Error (SP-PV) vs Time',
+                        subplot_titles=['Velocity and Set Point vs Time', 'Gas Pedal vs Time', 'Error (SP-PV) vs Time',
                                         'Road Slope vs Time'])
 
     # First subplot

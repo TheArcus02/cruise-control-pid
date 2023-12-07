@@ -1,10 +1,13 @@
 import numpy as np
 def vehicle(v,t,u,load, angle):
-    #  v    = prędkość pojazdu (m/s)
-    #  t    = czas (sec)
-    #  u    = pozycja pedału gazu (-50% to 100%)
-    #  load = obciążenie pojazdu (pasażerowie, załadunek) (kg)
-    #  angle = kąt nachylenia powierzchni
+    """
+    :param v: prędkość pojazdu (m/s)
+    :param t: czas (sec)
+    :param u: pozycja pedału gazu (-50% to 100%)
+    :param load: obciążenie pojazdu (pasażerowie, załadunek) (kg)
+    :param angle: kąt nachylenia powierzchni
+    :return: dv_dt: prędkość w chwili czasu
+    """
 
     Cd = 0.24    # opór aerodynamiczny (Drag coeffcient)
     rho = 1.225  # gęstość powietrza (kg/m^3)
