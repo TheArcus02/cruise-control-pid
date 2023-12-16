@@ -1,12 +1,33 @@
-from dash import Dash, html, dcc, Input, Output, Patch, ALL
+from dash import Dash, html, dcc, Input, Output, Patch, ALL, State
 from plotly.subplots import make_subplots
 from simulate import simulate
 import plotly.graph_objects as go
 
 app = Dash(__name__)
 
+prev_store = {
+    'ts': None,
+    'step': None,
+    'v_res': None,
+    'error_res': None,
+    'int_res': None,
+    'sp_res': None,
+    'angles_res': None
+}
+
 app.layout = html.Div([
+    # dcc.Store(id='prev-scores'),
     dcc.Graph(id='vel-graph'),
+    html.Div([
+        html.Button('Update Charts', id='update-charts', n_clicks=0, style={
+            'padding': '10px',
+        })
+    ], style={
+        'width': 'full',
+        'display': 'flex',
+        'justify-content': 'center',
+        'align-items': 'center',
+    }),
     html.Div([
         # Variables
         html.Div([
@@ -28,6 +49,16 @@ app.layout = html.Div([
             html.Div([
                 html.H4(children=['Initial pedal position [%]']),
                 dcc.Input(id="ubias", type="number", placeholder="0", value=0, min=-50, max=100),
+            ]),
+
+            html.Div([
+                html.H4(children=['Kp']),
+                dcc.Input(id="kp", type="number", placeholder="0", value=1.2),
+            ]),
+
+            html.Div([
+                html.H4(children=['TauI']),
+                dcc.Input(id="taui", type="number", placeholder="0", value=20),
             ]),
         ], style={
             'display': 'grid',
@@ -67,7 +98,7 @@ app.layout = html.Div([
 @app.callback(
     Output("set-point-container", "children"),
     Input("add-set-point", "n_clicks"),
-    Input("time", 'value'),
+    State("time", 'value'),
 )
 def display_set_points(n_clicks, time):
     patched_children = Patch()
@@ -97,7 +128,7 @@ def display_set_points(n_clicks, time):
 @app.callback(
     Output("angle-container", "children"),
     Input("add-angle", "n_clicks"),
-    Input("time", 'value'),
+    State("time", 'value'),
 )
 def display_angles(n_clicks, time):
     patched_children = Patch()
@@ -127,16 +158,20 @@ def display_angles(n_clicks, time):
 
 @app.callback(
     Output('vel-graph', 'figure'),
-    Input('time', 'value'),
-    Input('load', 'value'),
-    Input('v0', 'value'),
-    Input('ubias', 'value'),
-    Input({'type': 'set-point-time', 'index': ALL}, 'value'),
-    Input({'type': 'set-point-value', 'index': ALL}, 'value'),
-    Input({'type': 'angle-time', 'index': ALL}, 'value'),
-    Input({'type': 'angle-value', 'index': ALL}, 'value'),
+    Input('update-charts', 'n_clicks'),
+    State('time', 'value'),
+    State('load', 'value'),
+    State('v0', 'value'),
+    State('ubias', 'value'),
+    State('kp', 'value'),
+    State('taui', 'value'),
+    State({'type': 'set-point-time', 'index': ALL}, 'value'),
+    State({'type': 'set-point-value', 'index': ALL}, 'value'),
+    State({'type': 'angle-time', 'index': ALL}, 'value'),
+    State({'type': 'angle-value', 'index': ALL}, 'value'),
+    # State('prev-scores', 'data')
 )
-def display_graph(time, load, v0, ubias, set_point_times, set_point_values, angle_times, angle_values):
+def display_graph(n_clicks, time, load, v0, ubias, kp, taui, set_point_times, set_point_values, angle_times, angle_values):
     set_points = dict(zip(set_point_times, set_point_values))
     angles = dict(zip(angle_times, angle_values))
 
@@ -150,7 +185,9 @@ def display_graph(time, load, v0, ubias, set_point_times, set_point_values, angl
     # print('values', angle_values)
     # print('-----------------------')
 
-    ts, step, v_res, error_res, int_res, sp_res, angles_res = simulate(time, load, v0, ubias, set_points, angles)
+    ts, step, v_res, error_res, int_res, sp_res, angles_res = simulate(time, load, v0, ubias, set_points, angles, kp, taui)
+
+    global prev_store
 
     fig = make_subplots(rows=2, cols=2,
                         subplot_titles=['Velocity and Set Point vs Time', 'Gas Pedal vs Time', 'Error (SP-PV) vs Time',
@@ -162,26 +199,68 @@ def display_graph(time, load, v0, ubias, set_point_times, set_point_values, angl
     fig.add_trace(
         go.Scatter(x=ts, y=sp_res, mode='lines', name='Set Point', line=dict(color='black', dash='dash', width=2)),
         row=1, col=1)
+
+    # Add trace for previous velocity scores
+    if prev_store['v_res'] is not None:
+        fig.add_trace(
+            go.Scatter(x=prev_store['ts'], y=prev_store['v_res'], mode='lines', name='Previous Velocity',
+                       line=dict(color='gray', dash='dash', width=2)),
+            row=1, col=1)
+
     fig.update_yaxes(title_text='Velocity (m/s)', row=1, col=1)
 
     # Second subplot
     fig.add_trace(
         go.Scatter(x=ts, y=step, mode='lines', name='Gas Pedal', line=dict(color='red', dash='dash', width=3)), row=1,
         col=2)
+
+    # Add trace for previous gas pedal scores
+    if prev_store['step'] is not None:
+        fig.add_trace(
+            go.Scatter(x=prev_store['ts'], y=prev_store['step'], mode='lines', name='Previous Gas Pedal',
+                       line=dict(color='gray', dash='dash', width=2)),
+            row=1, col=2)
+
     fig.update_yaxes(title_text='Gas Pedal (%)', row=1, col=2)
     fig.update_xaxes(title_text='Time (sec)', row=1, col=2)
 
     # Third subplot
     fig.add_trace(go.Scatter(x=ts, y=error_res, mode='lines', name='Error (SP-PV)', line=dict(color='purple', width=3)),
                   row=2, col=1)
+
+    # Add trace for previous error scores
+    if prev_store['error_res'] is not None:
+        fig.add_trace(
+            go.Scatter(x=prev_store['ts'], y=prev_store['error_res'], mode='lines', name='Previous Error',
+                       line=dict(color='gray', dash='dash', width=2)),
+            row=2, col=1)
+
     fig.update_yaxes(title_text='Error (SP-PV)', row=2, col=1)
     fig.update_xaxes(title_text='Time (sec)', row=2, col=1)
 
     # Forth subplot
     fig.add_trace(go.Scatter(x=ts, y=angles_res, mode='lines', name='Angle of road',
                              line=dict(color='black', dash='dash', width=3)), row=2, col=2)
+
+    # Add trace for previous angle scores
+    if prev_store['angles_res'] is not None:
+        fig.add_trace(
+            go.Scatter(x=prev_store['ts'], y=prev_store['angles_res'], mode='lines', name='Previous Angle',
+                       line=dict(color='gray', dash='dash', width=2)),
+            row=2, col=2)
+
     fig.update_yaxes(title_text='Angle of road', row=2, col=2)
     fig.update_xaxes(title_text='Time (sec)', row=2, col=2)
+
+    prev_store = {
+        'ts': ts,
+        'step': step,
+        'v_res': v_res,
+        'error_res': error_res,
+        'int_res': int_res,
+        'sp_res': sp_res,
+        'angles_res': angles_res
+    }
 
     return fig
 

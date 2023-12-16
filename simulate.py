@@ -46,7 +46,7 @@ def generate_angle_array(angles, length):
     return angle_array
 
 
-def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None, angles=None):
+def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None, angles=None, kp=1.2, taui=20):
     # Ustawienia symulacji
     if set_points is None:
         set_points = initial_setpoints
@@ -81,8 +81,8 @@ def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None, angles=None):
     sum_int = 0.0
 
     # Sterowanie kontrolera
-    Kc = 1.0 / 1.2  # Kc = 1/Kp
-    tauI = 20.0
+    Kc = 1.0 / kp  # Kc = 1/Kp
+    tauI = taui
 
     # Przechowywanie wyników
     v_res = np.zeros(nsteps)
