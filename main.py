@@ -2,8 +2,9 @@ from dash import Dash, html, dcc, Input, Output, Patch, ALL, State
 from plotly.subplots import make_subplots
 from simulate import simulate
 import plotly.graph_objects as go
+import dash_bootstrap_components as dbc
 
-app = Dash(__name__)
+app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 
 prev_store = {
     'ts': None,
@@ -14,85 +15,77 @@ prev_store = {
     'sp_res': None,
     'angles_res': None
 }
-
-app.layout = html.Div([
-    # dcc.Store(id='prev-scores'),
-    dcc.Graph(id='vel-graph'),
-    html.Div([
-        html.Button('Update Charts', id='update-charts', n_clicks=0, style={
-            'padding': '10px',
-        })
-    ], style={
-        'width': 'full',
-        'display': 'flex',
-        'justify-content': 'center',
-        'align-items': 'center',
-    }),
-    html.Div([
+app.layout = dbc.Row([
+    dbc.Col([
+        html.Aside([
+        dbc.Button('Update Charts', id='update-charts', n_clicks=0),
         # Variables
+        html.H4(['Simulation Variables'], className='my-1'),
         html.Div([
             html.Div([
-                html.H4(children=['Time [s]']),
-                dcc.Input(id="time", type="number", placeholder="300.0", value=300.0, min=1),
+                html.H6(children=['Time [s]']),
+                dbc.Input(id="time", type="number", placeholder="300.0", value=300.0, min=1),
             ]),
 
             html.Div([
-                html.H4(children=['Load [kg]']),
-                dcc.Input(id="load", type="number", placeholder="200.0", value=200.0, min=0),
+                html.H6(children=['Load [kg]']),
+                dbc.Input(id="load", type="number", placeholder="200.0", value=200.0, min=0),
             ]),
 
             html.Div([
-                html.H4(children=['Initial Speed [m/s]']),
-                dcc.Input(id="v0", type="number", placeholder="0", value=0, min=0),
+                html.H6(children=['Initial Speed [m/s]']),
+                dbc.Input(id="v0", type="number", placeholder="0", value=0, min=0),
             ]),
 
             html.Div([
-                html.H4(children=['Initial pedal position [%]']),
-                dcc.Input(id="ubias", type="number", placeholder="0", value=0, min=-50, max=100),
+                html.H6(children=['Initial pedal [%]']),
+                dbc.Input(id="ubias", type="number", placeholder="0", value=0, min=-50, max=100),
             ]),
 
             html.Div([
-                html.H4(children=['Kp']),
-                dcc.Input(id="kp", type="number", placeholder="0", value=1.2),
+                html.H6(children=['Kp']),
+                dbc.Input(id="kp", type="number", placeholder="0", value=1.2),
             ]),
 
             html.Div([
-                html.H4(children=['TauI']),
-                dcc.Input(id="taui", type="number", placeholder="0", value=20),
+                html.H6(children=['TauI']),
+                dbc.Input(id="taui", type="number", placeholder="0", value=20),
             ]),
         ], style={
             'display': 'grid',
             'grid-template-columns': 'repeat(2, 1fr)',
-            'gap': '2px',
-            'max-width': '600px',
+            'gap': '6px',
         }),
 
         # Set Points
+        html.H4(['Set points'], className='mb-1 mt-3'),
         html.Div([
-            html.Button('Add Set Point in time', id='add-set-point', n_clicks=0, style={
+            dbc.Button('Add Set Point in time', id='add-set-point', n_clicks=0, style={
                 'margin-top': '10px'
             }),
-            html.Div(id="set-point-container", children=[], style={
-                'max-width': '500px'
-            }),
+            html.Div(id="set-point-container", children=[]),
         ]),
 
         # Angle
+        html.H4(['Road Slope'], className='my-1 mt-3'),
         html.Div([
-            html.Button('Add Angle Change in time', id='add-angle', n_clicks=0, style={
+            dbc.Button('Add Angle Change in time', id='add-angle', n_clicks=0, style={
                 'margin-top': '10px'
             }),
-            html.Div(id="angle-container", children=[], style={
-                'max-width': '500px'
-            }),
+            html.Div(id="angle-container", children=[])
         ])
+    ]),
     ], style={
-        'display': 'grid',
-        'grid-template-columns': 'repeat(3, 1fr)',
-        'gap': '2px'
-    }),
+            'max-width': '300px',
+        }, className='px-4 py-2 bg-secondary'),
+
+    dbc.Col([
+        html.H1(['PID Cruise Control'], className='text-center'),
+        dcc.Graph(id='vel-graph'),
+    ]),
 
 ])
+
 
 
 @app.callback(
@@ -104,20 +97,19 @@ def display_set_points(n_clicks, time):
     patched_children = Patch()
     container = html.Div([
         html.Div([
-            html.H4(children=['Point in Time [s]']),
-            dcc.Input(type="number", placeholder="0", value=0, max=time,
+            html.H6(children=['Point in Time [s]']),
+            dbc.Input(type="number", placeholder="0", value=0, max=time,
                       id={"type": "set-point-time", "index": n_clicks}),
         ]),
         html.Div([
-            html.H4(children=['Desired velocity [m/s]']),
-            dcc.Input(type="number", placeholder="20", value=20,
+            html.H6(children=[' velocity [m/s]']),
+            dbc.Input(type="number", placeholder="20", value=20,
                       id={"type": "set-point-value", "index": n_clicks}),
         ]),
     ], style={
         'display': 'grid',
         'grid-template-columns': 'repeat(2, 1fr)',
-        'gap': '2px',
-        'border': '1px black solid',
+        'gap': '4px',
         'padding': '10px',
         'margin': '10px 0'
     })
@@ -134,20 +126,19 @@ def display_angles(n_clicks, time):
     patched_children = Patch()
     container = html.Div([
         html.Div([
-            html.H4(children=['Point in Time [s]']),
-            dcc.Input(type="number", placeholder="0", value=0, max=time,
+            html.H6(children=['Point in Time [s]']),
+            dbc.Input(type="number", placeholder="0", value=0, max=time,
                       id={"type": "angle-time", "index": n_clicks}),
         ]),
         html.Div([
-            html.H4(children=['Angle°']),
-            dcc.Input(type="number", placeholder="0", value=0, min=-30, max=30,
+            html.H6(children=['Angle°']),
+            dbc.Input(type="number", placeholder="0", value=0, min=-30, max=30,
                       id={"type": "angle-value", "index": n_clicks}),
         ]),
     ], style={
         'display': 'grid',
         'grid-template-columns': 'repeat(2, 1fr)',
         'gap': '2px',
-        'border': '1px black solid',
         'padding': '10px',
         'margin': '10px 0'
     })
@@ -251,6 +242,7 @@ def display_graph(n_clicks, time, load, v0, ubias, kp, taui, set_point_times, se
 
     fig.update_yaxes(title_text='Angle of road', row=2, col=2)
     fig.update_xaxes(title_text='Time (sec)', row=2, col=2)
+    # fig.update_layout(template="plotly_dark")
 
     prev_store = {
         'ts': ts,
