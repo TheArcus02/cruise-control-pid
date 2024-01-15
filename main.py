@@ -172,22 +172,11 @@ def display_angles(n_clicks, time):
     State({'type': 'set-point-value', 'index': ALL}, 'value'),
     State({'type': 'angle-time', 'index': ALL}, 'value'),
     State({'type': 'angle-value', 'index': ALL}, 'value'),
-    # State('prev-scores', 'data')
 )
 def display_graph(n_clicks, time, load, v0, ubias, kp, taui, set_point_times, set_point_values, angle_times,
                   angle_values):
     set_points = dict(zip(set_point_times, set_point_values))
     angles = dict(zip(angle_times, angle_values))
-
-    # Debug logs
-    # print('-----------------------')
-    # print('set-points')
-    # print('times',set_point_times)
-    # print('values',set_point_values)
-    # print('angles')
-    # print('times', angle_times)
-    # print('values', angle_values)
-    # print('-----------------------')
 
     ts, step, v_res, error_res, int_res, sp_res, angles_res = simulate(time, load, v0, ubias, set_points, angles, kp,
                                                                        taui)
@@ -207,29 +196,49 @@ def display_graph(n_clicks, time, load, v0, ubias, kp, taui, set_point_times, se
     fig.add_trace(vel_trace, row=1, col=1)
     fig.add_trace(set_point_trace, row=1, col=1)
 
+    if prev_store['v_res'] is not None:
+        prev_vel_trace = go.Scatter(x=prev_store['ts'], y=prev_store['v_res'], mode='lines',
+                                    name='Previous Velocity', line=dict(color='gray', dash='dash', width=2))
+        prev_vel_trace.hovertemplate = '%{x:.2f} s, %{y:.2f} m/s'
+        fig.add_trace(prev_vel_trace, row=1, col=1)
+
     # Second subplot
     gas_pedal_trace = go.Scatter(x=ts, y=step, mode='lines', name='Gas Pedal',
                                  line=dict(color='red', dash='dash', width=3))
     gas_pedal_trace.hovertemplate = '%{x:.2f} s, %{y:.2f} %'
     fig.add_trace(gas_pedal_trace, row=2, col=1)
+    if prev_store['step'] is not None:
+        prev_gas_pedal_trace = go.Scatter(x=prev_store['ts'], y=prev_store['step'], mode='lines',
+                                          name='Previous Gas Pedal', line=dict(color='gray', dash='dash', width=2))
+        prev_gas_pedal_trace.hovertemplate = '%{x:.2f} s, %{y:.2f} %'
+        fig.add_trace(prev_gas_pedal_trace, row=2, col=1)
 
     # Third subplot
     error_trace = go.Scatter(x=ts, y=error_res, mode='lines', name='Error (SP-PV)', line=dict(color='purple', width=3))
     error_trace.hovertemplate = '%{x:.2f} s, %{y:.2f} m/s'
     fig.add_trace(error_trace, row=3, col=1)
+    if prev_store['error_res'] is not None:
+        prev_error_trace = go.Scatter(x=prev_store['ts'], y=prev_store['error_res'], mode='lines',
+                                      name='Previous Error', line=dict(color='gray', dash='dash', width=2))
+        prev_error_trace.hovertemplate = '%{x:.2f} s, %{y:.2f} m/s'
+        fig.add_trace(prev_error_trace, row=3, col=1)
 
     # Forth subplot
     angle_trace = go.Scatter(x=ts, y=angles_res, mode='lines', name='Angle of road',
                              line=dict(color='black', dash='dash', width=3))
     angle_trace.hovertemplate = '%{x:.2f} s, %{y:.2f} degrees'
     fig.add_trace(angle_trace, row=4, col=1)
+    if prev_store['angles_res'] is not None:
+        prev_angle_trace = go.Scatter(x=prev_store['ts'], y=prev_store['angles_res'], mode='lines',
+                                      name='Previous Angle', line=dict(color='gray', dash='dash', width=2))
+        angle_trace.hovertemplate = '%{x:.2f} s, %{y:.2f} degrees'
+        fig.add_trace(prev_angle_trace, row=4, col=1)
 
     fig.update_yaxes(title_text='Velocity (m/s)', row=1, col=1)
     fig.update_yaxes(title_text='Gas Pedal (%)', row=2, col=1)
     fig.update_yaxes(title_text='Error (SP-PV)', row=3, col=1)
     fig.update_yaxes(title_text='Angle of road', row=4, col=1)
     fig.update_xaxes(title_text='Time (sec)', row=4, col=1)
-
 
     prev_store = {
         'ts': ts,
