@@ -51,13 +51,13 @@ app.layout = dbc.Row([
             html.H4(['PI Regulation'], className='mb-1 mt-3'),
             html.Div([
                 html.Div([
-                    html.P(children=['Kp'], className='mb-2'),
-                    dbc.Input(id="kp", type="number", placeholder="0", value=1.2),
+                    html.P(children=['Kc'], className='mb-2'),
+                    dbc.Input(id="kc", type="number", placeholder="0", value=0.8),
                 ]),
 
                 html.Div([
                     html.P(children=['TauI'], className='mb-2'),
-                    dbc.Input(id="taui", type="number", placeholder="0", value=20),
+                    dbc.Input(id="taui", type="number", placeholder="0", value=50),
                 ]),
             ], style={
                 'display': 'grid',
@@ -114,7 +114,7 @@ def display_set_points(n_clicks, time):
         ]),
         html.Div([
             html.P(children=[' velocity [m/s]'], className='mb-2'),
-            dbc.Input(type="number", placeholder="20", value=20,
+            dbc.Input(type="number", placeholder="20", value=0,
                       id={"type": "set-point-value", "index": n_clicks}),
         ]),
     ], style={
@@ -166,19 +166,19 @@ def display_angles(n_clicks, time):
     State('load', 'value'),
     State('v0', 'value'),
     State('ubias', 'value'),
-    State('kp', 'value'),
+    State('kc', 'value'),
     State('taui', 'value'),
     State({'type': 'set-point-time', 'index': ALL}, 'value'),
     State({'type': 'set-point-value', 'index': ALL}, 'value'),
     State({'type': 'angle-time', 'index': ALL}, 'value'),
     State({'type': 'angle-value', 'index': ALL}, 'value'),
 )
-def display_graph(n_clicks, time, load, v0, ubias, kp, taui, set_point_times, set_point_values, angle_times,
+def display_graph(n_clicks, time, load, v0, ubias, kc, taui, set_point_times, set_point_values, angle_times,
                   angle_values):
     set_points = dict(zip(set_point_times, set_point_values))
     angles = dict(zip(angle_times, angle_values))
 
-    ts, step, v_res, error_res, int_res, sp_res, angles_res = simulate(time, load, v0, ubias, set_points, angles, kp,
+    ts, step, v_res, error_res, int_res, sp_res, angles_res = simulate(time, load, v0, ubias, set_points, angles, kc,
                                                                        taui)
 
     global prev_store

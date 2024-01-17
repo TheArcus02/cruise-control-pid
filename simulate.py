@@ -2,12 +2,6 @@ import numpy as np
 from scipy.integrate import odeint
 from vehicle import vehicle
 
-initial_setpoints = {
-    50: 0,
-    100: 15,
-    150: 20,
-    200: 10
-}
 
 
 def keep_limit(u: int) -> int:
@@ -46,10 +40,10 @@ def generate_angle_array(angles, length):
     return angle_array
 
 
-def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None, angles=None, kp=1.2, taui=20):
+def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None, angles=None, kc=0, taui=20):
     # Ustawienia symulacji
     if set_points is None:
-        set_points = initial_setpoints
+        set_points = {0: 0}
 
     if tf <= 0:
         tf = 1
@@ -72,7 +66,7 @@ def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None, angles=None, 
         angles = generate_angle_array(angles, nsteps)
 
     # prędkość docelowa (set point)
-    sp = 25.0
+    sp = 0
 
     # Wartiści początkowe
     if not ubias:
@@ -81,7 +75,7 @@ def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None, angles=None, 
     sum_int = 0.0
 
     # Sterowanie kontrolera
-    Kc = 1.0 / kp  # Kc = 1/Kp
+    Kc = kc
     tauI = taui
 
     # Przechowywanie wyników
@@ -112,8 +106,8 @@ def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None, angles=None, 
         # Obliczenie chwili czasu dla prędkości
         angle = angles[i]
         v = odeint(vehicle, v0, [0, delta_t], args=(u, load, angle))
-
         v0 = v[-1]  # take the last value
+        if v0 < 0: v0 = 0
         v_res[i + 1] = v0  # store the velocity for plotting
 
     return ts, step, v_res, error_res, int_res, sp_res, angles
