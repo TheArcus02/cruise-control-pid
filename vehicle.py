@@ -14,8 +14,9 @@ def vehicle(v,t,u,load, angle):
     A = 5.0      # Przekrój czynny (m^2)
     Fp = 30      # siła ciągu (N/%pedal)
     m = 500      # masa pojazdu (kg)
-    # * np.sin(np.deg2rad(angle))
+    g = 9.81
+
     # pochodna prędkości
-    dv_dt = (1.0/(m+load)) * (Fp*u - 0.5*rho*Cd*A*v**2*np.sin(np.deg2rad(angle)))
+    dv_dt = (1.0/(m+load)) * ((Fp*u) - (0.5*rho*Cd*A*v**2) - (m+load)*g*np.sin(np.deg2rad(angle)))
     return dv_dt
 

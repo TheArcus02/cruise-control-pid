@@ -45,7 +45,9 @@ def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None, angles=None, 
     if set_points is None:
         set_points = {0: 0}
 
-    if tf <= 0:
+    print(set_points)
+
+    if tf is None or tf <= 0:
         tf = 1
 
     nsteps = tf + 1  # ilość kroków czasowych
@@ -54,10 +56,10 @@ def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None, angles=None, 
 
     step = np.zeros(nsteps)  # % położenia pedału gazu
 
-    if load < 0 or not load:
+    if load is None or load < 0:
         load = 0
 
-    if v0 < 0 or not v0:
+    if  v0 is None or v0 < 0:
         v0 = 0
 
     if angles is None:
@@ -94,8 +96,8 @@ def simulate(tf=300.0, load=200.0, v0=0, ubias=0, set_points=None, angles=None, 
         error_res[i + 1] = error
 
         # Całka korelacji
-        sum_int = sum_int + error + delta_t
-        u = ubias + Kc * error + Kc / tauI * sum_int
+        sum_int = sum_int + (error * delta_t)
+        u = ubias + (Kc * error) + (Kc / tauI * sum_int)
 
         # Utrzymanie wartości pedału gazu w odpowienim przedziale
         u = keep_limit(u)
